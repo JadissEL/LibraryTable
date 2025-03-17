@@ -1,0 +1,55 @@
+# ====================================
+# KUBERNETES SERVICE CONFIGURATION
+# ====================================
+# Defines how the application is exposed within or outside the cluster
+# Learning Path: Kubernetes Networking
+# - Service types and their use cases
+# - Network policies and security
+# - Load balancing patterns
+
+# API version and resource type
+# Skills to learn:
+# - Kubernetes core API resources
+# - Service networking fundamentals
+apiVersion: v1
+kind: Service
+
+# Service metadata
+# Skills to learn:
+# - Service discovery
+# - DNS in Kubernetes
+# - Namespace isolation
+metadata:
+  name: library-booking-system
+  namespace: library-booking-system
+
+# Service specification
+# Skills to learn:
+# - Network architecture
+# - Service exposure methods
+# - Traffic management
+spec:
+  # Service type definition
+  # Skills to learn:
+  # - Different service types (ClusterIP, NodePort, LoadBalancer)
+  # - Internal vs external access
+  # - Network security considerations
+  type: ClusterIP  # Internal cluster access only
+
+  # Port configuration
+  # Skills to learn:
+  # - Port mapping strategies
+  # - Protocol selection
+  # - Service networking
+  ports:
+    - port: 80        # Port exposed by the service
+      targetPort: 3000 # Port where the application listens
+      protocol: TCP    # Network protocol
+
+  # Pod selector
+  # Skills to learn:
+  # - Label-based routing
+  # - Service-pod communication
+  # - Load balancing algorithms
+  selector:
+    app: library-booking-system  # Maps to pod labels

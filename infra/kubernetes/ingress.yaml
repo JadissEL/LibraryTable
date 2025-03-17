@@ -1,0 +1,70 @@
+# ====================================
+# KUBERNETES INGRESS CONFIGURATION
+# ====================================
+# Manages external access to services within the cluster
+# Learning Path: Kubernetes External Access
+# - Ingress controllers and rules
+# - SSL/TLS termination
+# - URL routing and path rewriting
+
+# API version and resource type
+# Skills to learn:
+# - Kubernetes networking APIs
+# - Ingress controller types
+# - Network architecture patterns
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+# Ingress metadata and configuration
+# Skills to learn:
+# - Ingress naming conventions
+# - Namespace management
+# - Annotation usage in Kubernetes
+metadata:
+  name: library-booking-system
+  namespace: library-booking-system
+  # Ingress controller configuration
+  # Skills to learn:
+  # - NGINX Ingress Controller
+  # - URL rewriting rules
+  # - Path manipulation
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+# Ingress specification
+# Skills to learn:
+# - Traffic routing rules
+# - Domain name configuration
+# - Load balancing strategies
+spec:
+  # Routing rules configuration
+  # Skills to learn:
+  # - DNS configuration
+  # - Multi-domain hosting
+  # - Host-based routing
+  rules:
+  - host: library-booking.local  # Domain name
+    # HTTP traffic configuration
+    # Skills to learn:
+    # - HTTP routing
+    # - Path-based routing
+    # - SSL/TLS termination
+    http:
+      paths:
+      - path: /  # URL path
+        # Path matching configuration
+        # Skills to learn:
+        # - URL pattern matching
+        # - Route precedence
+        # - Traffic splitting
+        pathType: Prefix
+        # Backend service configuration
+        # Skills to learn:
+        # - Service discovery
+        # - Backend protocols
+        # - Load balancing methods
+        backend:
+          service:
+            name: library-booking-system
+            port:
+              number: 80  # Target service port

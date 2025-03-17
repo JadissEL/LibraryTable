@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    #output {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      height: 400px;
+      overflow-y: auto;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .instructions {
+      background-color: #e7f3fe;
+      border-left: 6px solid #2196F3;
+      padding: 10px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Authentication Test</h1>
+  
+  <div class="instructions">
+    <p><strong>Instructions:</strong></p>
+    <ol>
+      <li>Click the "Run Test" button to test the authentication flow</li>
+      <li>Check the console output below for results</li>
+      <li>If the test passes, you should see "All tests passed successfully!"</li>
+      <li>If the test fails, you'll see error messages explaining what went wrong</li>
+    </ol>
+  </div>
+  
+  <button id="runTest">Run Test</button>
+  <button id="clearConsole">Clear Console</button>
+  <button id="clearStorage">Clear Local Storage</button>
+  
+  <div id="output"></div>
+  
+  <script>
+    // Override console.log to display in the output div
+    const output = document.getElementById('output');
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    
+    console.log = function() {
+      const args = Array.from(arguments);
+      output.innerHTML += args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+      ).join(' ') + '<br>';
+      output.scrollTop = output.scrollHeight;
+      originalConsoleLog.apply(console, arguments);
+    };
+    
+    console.error = function() {
+      const args = Array.from(arguments);
+      output.innerHTML += '<span style="color: red;">' + 
+        args.map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+        ).join(' ') + '</span><br>';
+      output.scrollTop = output.scrollHeight;
+      originalConsoleError.apply(console, arguments);
+    };
+    
+    // Function to create a test user
+    async function createTestUser() {
+      const testUser = {
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'password123'
+      };
+      
+      try {
+        // Try to register the user
+        console.log('Attempting to register a new user...');
+        const response = await fetch('http://localhost:8080/api/users/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testUser)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          // If user already exists, try to login
+          if (data.message && data.message.includes('already exists')) {
+            console.log('User already exists, trying to login instead...');
+            return loginTestUser();
+          }
+          throw new Error(data.message || 'Registration failed');
+        }
+        
+        console.log('Registration successful!');
+        return data.data;
+      } catch (error) {
+        console.error('Registration error:', error);
+        // Try to login if registration fails
+        return loginTestUser();
+      }
+    }
+
+    // Function to login a test user
+    async function loginTestUser() {
+      const loginData = {
+        email: 'test@example.com',
+        password: 'password123'
+      };
+      
+      try {
+        console.log('Attempting to login...');
+        console.log('Login data:', loginData);
+        
+        const response = await fetch('http://localhost:8080/api/users/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(loginData)
+        });
+        
+        console.log('Login response status:', response.status);
+        
+        const data = await response.json();
+        console.log('Login response data:', data);
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
+        
+        console.log('Login successful!');
+        return data.data;
+      } catch (error) {
+        console.error('Login error details:', error.toString());
+        if (error instanceof TypeError) {
+          console.error('Network error - Make sure the backend server is running at http://localhost:8080');
+        }
+        throw error;
+      }
+    }
+
+    // Function to test authentication
+    async function testAuth(token) {
+      try {
+        console.log('Testing authentication...');
+        const response = await fetch('http://localhost:8080/api/users/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-auth-token': token
+          }
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Authentication failed');
+        }
+        
+        const data = await response.json();
+        console.log('Authentication successful!');
+        console.log('User profile:', data.data);
+        return true;
+      } catch (error) {
+        console.error('Authentication error:', error);
+        return false;
+      }
+    }
+
+    // Function to test booking
+    async function testBooking(token) {
+      try {
+        console.log('Testing booking functionality...');
+        // Get available tables
+        const tablesResponse = await fetch('http://localhost:8080/api/tables/available', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!tablesResponse.ok) {
+          const data = await tablesResponse.json();
+          throw new Error(data.message || 'Failed to get tables');
+        }
+        
+        const tablesData = await tablesResponse.json();
+        const tables = tablesData.data;
+        
+        if (tables.length === 0) {
+          console.log('No tables available for booking.');
+          return false;
+        }
+        
+        // Create a booking
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const bookingData = {
+          tableId: tables[0]._id,
+          date: tomorrow.toISOString().split('T')[0],
+          startTime: '10:00',
+          endTime: '12:00',
+          purpose: 'Test booking'
+        };
+        
+        console.log('Booking data:', bookingData);
+        
+        const bookingResponse = await fetch('http://localhost:8080/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-auth-token': token
+          },
+          body: JSON.stringify(bookingData)
+        });
+        
+        if (!bookingResponse.ok) {
+          const data = await bookingResponse.json();
+          throw new Error(data.message || 'Booking failed');
+        }
+        
+        const bookingResult = await bookingResponse.json();
+        console.log('Booking successful!');
+        console.log('Booking details:', bookingResult.data);
+        return true;
+      } catch (error) {
+        console.error('Booking error:', error);
+        return false;
+      }
+    }
+
+    // Main function
+    async function main() {
+      try {
+        console.log('Starting authentication test...');
+        console.log('Backend URL: http://localhost:8080/api');
+        
+        // Check if backend is reachable
+        try {
+          const pingResponse = await fetch('http://localhost:8080/api');
+          console.log('Backend ping status:', pingResponse.status);
+          const pingData = await pingResponse.json();
+          console.log('Backend ping response:', pingData);
+        } catch (pingError) {
+          console.error('Backend ping failed:', pingError.toString());
+          console.error('Make sure the backend server is running at http://localhost:8080');
+          return;
+        }
+        
+        // Step 1: Register or login
+        const userData = await createTestUser();
+        console.log('User data:', userData);
+        
+        // Save token to localStorage
+        localStorage.setItem('token', userData.token);
+        
+        // Step 2: Test authentication
+        const authSuccess = await testAuth(userData.token);
+        
+        if (!authSuccess) {
+          console.log('Authentication test failed. Please check your token.');
+          return;
+        }
+        
+        // Step 3: Test booking
+        const bookingSuccess = await testBooking(userData.token);
+        
+        if (!bookingSuccess) {
+          console.log('Booking test failed. Please check the booking functionality.');
+          return;
+        }
+        
+        console.log('All tests passed successfully!');
+        console.log('To fix the authentication issue in the frontend:');
+        console.log('1. Make sure you are logged in');
+        console.log('2. Check that the token is being stored in localStorage');
+        console.log('3. Verify that the token is being set in the axios headers');
+        console.log('4. Ensure the token is valid and not expired');
+        
+      } catch (error) {
+        console.error('Test failed details:', error.toString());
+      }
+    }
+    
+    // Event listeners
+    document.getElementById('runTest').addEventListener('click', () => {
+      output.innerHTML = '';
+      main();
+    });
+    
+    document.getElementById('clearConsole').addEventListener('click', () => {
+      output.innerHTML = '';
+    });
+    
+    document.getElementById('clearStorage').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      console.log('Local storage cleared');
+    });
+  </script>
+</body>
+</html>

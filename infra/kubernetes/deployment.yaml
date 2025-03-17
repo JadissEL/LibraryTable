@@ -1,0 +1,107 @@
+# ====================================
+# KUBERNETES DEPLOYMENT CONFIGURATION
+# ====================================
+# Defines how to deploy and run the application in Kubernetes
+# Learning Path: Container Orchestration
+# - Kubernetes architecture
+# - Container lifecycle management
+# - Application scaling and reliability
+
+# API version and resource type declaration
+# Skills to learn:
+# - Kubernetes API versioning
+# - Resource types and their purposes
+apiVersion: apps/v1
+kind: Deployment
+
+# Metadata for the deployment
+# Skills to learn:
+# - Kubernetes resource naming
+# - Namespace organization
+# - Label strategy for resource management
+metadata:
+  name: library-booking-system
+  namespace: library-booking-system
+
+# Deployment specification
+# Skills to learn:
+# - Deployment strategies
+# - Rolling updates
+# - Application scaling
+spec:
+  # Number of pod replicas to maintain
+  # Skills to learn:
+  # - High availability patterns
+  # - Load balancing concepts
+  # - Horizontal scaling
+  replicas: 2
+
+  # Label selector for pod management
+  # Skills to learn:
+  # - Label selectors and their importance
+  # - Service discovery mechanisms
+  selector:
+    matchLabels:
+      app: library-booking-system
+
+  # Pod template specification
+  # Skills to learn:
+  # - Pod lifecycle
+  # - Container configuration
+  # - Application packaging
+  template:
+    metadata:
+      labels:
+        app: library-booking-system
+    spec:
+      containers:
+      # Container configuration
+      # Skills to learn:
+      # - Container image management
+      # - Docker best practices
+      # - Image tagging strategies
+      - name: backend
+        image: library-booking-system:latest
+        
+        # Network configuration
+        # Skills to learn:
+        # - Container networking
+        # - Port mapping
+        # - Service exposure
+        ports:
+        - containerPort: 3000
+
+        # Environment variables
+        # Skills to learn:
+        # - Configuration management
+        # - Environment separation
+        # - Secret management
+        env:
+        - name: PORT
+          value: "3000"
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: uri
+
+        # Resource management
+        # Skills to learn:
+        # - Resource allocation
+        # - Performance optimization
+        # - Cost management
+        resources:
+          # Maximum resource limits
+          # Skills to learn:
+          # - Resource quotas
+          # - Container optimization
+          limits:
+            cpu: "500m"    # 500 millicores = 0.5 CPU
+            memory: "512Mi" # 512 Mebibytes
+          # Minimum resource requests
+          # Skills to learn:
+          # - Resource planning
+          # - Pod scheduling
+          requests:
+            cpu: "200m"    # 200 millicores = 0.2 CPU
+            memory: "256Mi" # 256 Mebibytes
