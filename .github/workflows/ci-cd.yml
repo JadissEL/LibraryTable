@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        
+    - name: Install Frontend Dependencies
+      run: cd frontend && npm install
+
+    - name: Install Backend Dependencies
+      run: cd backend && npm install
+      
+    - name: Run Backend Tests
+      run: cd backend && npm test
+      env:
+        MONGO_URI: mongodb://localhost:27017/libraryBookingSystem
+        JWT_SECRET: test_secret_key
+        NODE_ENV: test
+
+    - name: Run Frontend Tests
+      run: cd frontend && npm test
+
+    - name: Build Frontend
+      run: cd frontend && npm run build
+
+    - name: Build Backend Docker Image
+      run: |
+        cd backend
+        docker build -t library-booking-backend:${{ github.sha }} .
